@@ -1,4 +1,4 @@
-from scipy.linalg import solve_banded
+from scipy.linalg import solve
 from matplotlib import pyplot
 
 
@@ -39,7 +39,7 @@ b0 = [0]*N_NODES
 b0[0] = S_C_A
 b0[-1] = S_C_B
 
-matrix_A = Matrix()
+matrix_A = []
 first_row = [0]*N_NODES
 first_row[0], first_row[1] = a_P_A, -a_E_A
 
