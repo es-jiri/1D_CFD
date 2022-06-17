@@ -1,4 +1,4 @@
-from scipy.linalg import solve
+from scipy.linalg import solve_banded
 from matplotlib import pyplot
 
 
