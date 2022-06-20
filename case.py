@@ -3,14 +3,14 @@ from matplotlib import pyplot
 
 
 DENSITY = 1e03
-CONDUCTIVITY = 1000
-VELOCITY = 0.0
+CONDUCTIVITY = 0
+VELOCITY = 0.1
 
 
 LENGTH = 0.5
-N_NODES = 500
+N_NODES = 200
 DELTA_X = LENGTH/N_NODES
-DELTA_T = 0.001
+DELTA_T = 0.01
 TIME = 2.0
 x = [0]
 x += [DELTA_X/2 + i*DELTA_X for i in range(N_NODES)]
@@ -20,8 +20,8 @@ x += [LENGTH]
 def eps(xx): return 0 if xx<0 else 1
 
 
-phi_A = 100
-phi_B = 600
+phi_A = 1
+phi_B = 0
 
 
 a_P0 = DELTA_X/DELTA_T*DENSITY
@@ -56,7 +56,7 @@ for i in range(1,N_NODES-1):
 matrix_A.append(last_row)
 
 
-phi_0 = [300]*N_NODES
+phi_0 = [0]*N_NODES
 time = 0
 
 
@@ -65,11 +65,10 @@ while(time<TIME):
     phi = solve(matrix_A, b)
     phi_0 = phi
     time += DELTA_T
+    vals = [phi_A]
+    [vals.append(item) for item in phi]
+    vals.append(phi_B)
+    pyplot.plot(x,vals)
 
-
-vals = [phi_A]
-[vals.append(item) for item in phi]
-vals.append(phi_B)
-pyplot.plot(x,vals)
 pyplot.show()
 
