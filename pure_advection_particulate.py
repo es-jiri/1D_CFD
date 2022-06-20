@@ -22,7 +22,7 @@ def eps(xx): return 0 if xx<0 else 1
 
 
 rho_A = 1
-m_A = 0.002
+m_A = 0.001
 c_A = rho_A/m_A
 
 rho_B = 0.5
@@ -37,7 +37,7 @@ grad_m_A = 0
 grad_m_B = 0
 
 
-rho_0 = [0.95]*N_NODES
+rho_0 = [0.90]*N_NODES
 
 m_0 = [0.001]*N_NODES
 c_0 = [rho_0[i]/m_0[i] for i in range(len(m_0))]
@@ -112,32 +112,32 @@ while(time<TIME):
     am_W = [0]*N_NODES
 
     c_face = [c_A] + [(c[i]+c[i+1])*0.5 for i in range(N_NODES-1)] + [c_B]
- 
 
+    C_P_MIN = 100000
+ 
+    print()
     for i in range(N_NODES):
-        if(c[i]>100):
-            am_P0[i] = c_0[i]/DELTA_T
-            am_P[i] = am_P0[i] + VELOCITY/DELTA_X*(eps(VELOCITY)*c_face[i] - (eps(VELOCITY)-1)*c_face[i+1])
-            am_E[i] = -VELOCITY/DELTA_X*(1-eps(VELOCITY)*c_face[i+1])
-            am_W[i] = VELOCITY*eps(VELOCITY)/DELTA_X*eps(VELOCITY)*c_face[i]
-        else:
-            am_P0[i] = 1/DELTA_T
-            am_P[i] = am_P0[i] + VELOCITY/DELTA_X*(eps(VELOCITY) - (eps(VELOCITY)-1))
-            am_E[i] = -VELOCITY/DELTA_X*(1-eps(VELOCITY))
-            am_W[i] = VELOCITY*eps(VELOCITY)/DELTA_X*eps(VELOCITY)
-    
-    am_E_A = am_E[0]
-    am_W_B = am_W[-1]
+        c_P = max(c[i],C_P_MIN)
+        c_P_0 = C_P_MIN if (c_P<=C_P_MIN) else c_0[i]
+        am_P0[i] = c_P_0/DELTA_T
+        am_P[i] = am_P0[i] + VELOCITY/DELTA_X * (eps(VELOCITY)*c_face[i]-(eps(VELOCITY)-1)*c_face[i+1])
+        print('{:.0f}'.format(c_P),end=' ')
+
+    am_E = -VELOCITY/DELTA_X * (1-eps(VELOCITY))
+    am_W = VELOCITY/DELTA_X * eps(VELOCITY)
+    am_E_A = am_E
+    am_W_B = am_W
     if VELOCITY>0:
         am_P_A = am_P[0]
-        am_P_B = am_P0[-1] + VELOCITY*eps(VELOCITY)/DELTA_X
-        Sm_C_A = VELOCITY*eps(VELOCITY)/DELTA_X*m_A*(c_A if c[0]>0 else 1)
-        Sm_C_B = -0.5*VELOCITY*(1-eps(VELOCITY))*grad_m_B*(c_B if c[-1]>0 else 1)
+        am_P_B = am_P0[-1] + VELOCITY/DELTA_X*eps(VELOCITY)
+        Sm_C_A = VELOCITY/DELTA_X*eps(VELOCITY)*m_A*c_A
+        Sm_C_B = -0.5*VELOCITY*(1-eps(VELOCITY))*grad_m_B*c_B
     else:
-        am_P_A = am_P0[0] + VELOCITY*(eps(VELOCITY)-1)/DELTA_X
+        am_P_A = am_P0[0] + VELOCITY/DELTA_X*(eps(VELOCITY)-1)
         am_P_B = am_P[-1]
-        Sm_C_A = 0.5*VELOCITY*eps(VELOCITY)*grad_m_A*(c_A if c[0]>0 else 1)
-        Sm_C_B = -VELOCITY*(1-eps(VELOCITY))/DELTA_X*m_B*(c_B if c[-1]>0 else 1)
+        Sm_C_A = 0.5*VELOCITY*eps(VELOCITY)*grad_m_A*c_A
+        Sm_C_B = -VELOCITY/DELTA_X*(1-eps(VELOCITY))*m_B*c_B
+
     bm0 = [0]*N_NODES
     bm0[0] = Sm_C_A
     bm0[-1] = Sm_C_B
@@ -150,12 +150,11 @@ while(time<TIME):
     matrix_m_A.append(first_row)
     for i in range(1,N_NODES-1):
         row = [0]*N_NODES
-        row[i-1] = -am_W[i]
+        row[i-1] = -am_W
         row[i] = am_P[i]
-        row[i+1] = -am_E[i]
+        row[i+1] = -am_E
         matrix_m_A.append(row)
     matrix_m_A.append(last_row)
-
  
     b = [bm0[i]+am_P0[i]*m_0[i] for i in range(len(bm0))]
     m = solve(matrix_m_A, b)
