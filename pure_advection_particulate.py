@@ -8,9 +8,9 @@ VELOCITY = 0.5
 
 
 LENGTH = 0.5
-N_NODES = 30
+N_NODES = 50
 DELTA_X = LENGTH/N_NODES
-DELTA_T = 0.1
+DELTA_T = 0.01
 TIME = 2.0
 x = [0]
 x += [DELTA_X/2 + i*DELTA_X for i in range(N_NODES)]
@@ -25,7 +25,7 @@ rho_A = 1
 m_A = 0.001
 c_A = rho_A/m_A
 
-rho_B = 0.5
+rho_B = 0.0
 m_B = 0.001
 c_B = rho_B/m_B
 
@@ -37,7 +37,7 @@ grad_m_A = 0
 grad_m_B = 0
 
 
-rho_0 = [0.90]*N_NODES
+rho_0 = [0.5]*N_NODES
 
 m_0 = [0.001]*N_NODES
 c_0 = [rho_0[i]/m_0[i] for i in range(len(m_0))]
@@ -113,27 +113,25 @@ while(time<TIME):
 
     c_face = [c_A] + [(c[i]+c[i+1])*0.5 for i in range(N_NODES-1)] + [c_B]
 
-    C_P_MIN = 100000
+    C_P_MIN = 1
  
-    print()
     for i in range(N_NODES):
-        c_P = max(c[i],C_P_MIN)
-        c_P_0 = C_P_MIN if (c_P<=C_P_MIN) else c_0[i]
+        c_P = max(c[i], C_P_MIN)
+        c_P_0 = max(c_0[i], C_P_MIN)
         am_P0[i] = c_P_0/DELTA_T
-        am_P[i] = am_P0[i] + VELOCITY/DELTA_X * (eps(VELOCITY)*c_face[i]-(eps(VELOCITY)-1)*c_face[i+1])
-        print('{:.0f}'.format(c_P),end=' ')
+        am_P[i] = c_P/DELTA_T + VELOCITY/DELTA_X*(eps(VELOCITY)*c_face[i]-(eps(VELOCITY)-1)*c_face[i+1])
+        am_E[i] = -VELOCITY/DELTA_X * (1-eps(VELOCITY))*c_face[i+1]
+        am_W[i] = VELOCITY/DELTA_X * eps(VELOCITY)*c_face[i]
 
-    am_E = -VELOCITY/DELTA_X * (1-eps(VELOCITY))
-    am_W = VELOCITY/DELTA_X * eps(VELOCITY)
-    am_E_A = am_E
-    am_W_B = am_W
+    am_E_A = am_E[0]
+    am_W_B = am_W[-1]
     if VELOCITY>0:
         am_P_A = am_P[0]
-        am_P_B = am_P0[-1] + VELOCITY/DELTA_X*eps(VELOCITY)
+        am_P_B = am_P0[-1] + VELOCITY/DELTA_X*eps(VELOCITY)*c_B
         Sm_C_A = VELOCITY/DELTA_X*eps(VELOCITY)*m_A*c_A
         Sm_C_B = -0.5*VELOCITY*(1-eps(VELOCITY))*grad_m_B*c_B
     else:
-        am_P_A = am_P0[0] + VELOCITY/DELTA_X*(eps(VELOCITY)-1)
+        am_P_A = am_P0[0] + VELOCITY/DELTA_X*(eps(VELOCITY)-1)*c_A
         am_P_B = am_P[-1]
         Sm_C_A = 0.5*VELOCITY*eps(VELOCITY)*grad_m_A*c_A
         Sm_C_B = -VELOCITY/DELTA_X*(1-eps(VELOCITY))*m_B*c_B
@@ -150,9 +148,9 @@ while(time<TIME):
     matrix_m_A.append(first_row)
     for i in range(1,N_NODES-1):
         row = [0]*N_NODES
-        row[i-1] = -am_W
+        row[i-1] = -am_W[i]
         row[i] = am_P[i]
-        row[i+1] = -am_E
+        row[i+1] = -am_E[i]
         matrix_m_A.append(row)
     matrix_m_A.append(last_row)
  
@@ -181,7 +179,6 @@ while(time<TIME):
     c_0 = c
     m_0 = m
     time += DELTA_T
-
 
 print('init amount:', init_amount)
 print('inflow:', inflow)
